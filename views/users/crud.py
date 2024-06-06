@@ -6,12 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.engine import Result
 
 from core.models import User, Post
-from views.users.schemas import UserSchemaIn
+from views.users.schemas import UserCreateSchema, UserUpdateSchema
 
 
 async def create_user(
         session: AsyncSession,
-        data_create: UserSchemaIn,
+        data_create: UserCreateSchema,
 ) -> User:
     user = User(**data_create.model_dump())
     async with session.begin():
@@ -35,6 +35,17 @@ async def get_user_by_username(session: AsyncSession,
     stmt = select(User).where(User.username == username)
     result: Result = await session.execute(stmt)
     user = result.scalar_one_or_none()
+    return user
+
+
+async def update_user(
+        session: AsyncSession,
+        user: User,
+        data_update: UserUpdateSchema,
+     ) -> User:
+    for name, value in data_update.model_dump(exclude_unset=True).items():
+        setattr(user, name, value)
+    await session.commit()
     return user
 
 

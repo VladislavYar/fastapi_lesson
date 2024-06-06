@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, AnyHttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from pathlib import Path
@@ -7,6 +7,10 @@ from pathlib import Path
 BASE_DIR = Path(__file__).parent
 
 SQLITE_DB_PATH = BASE_DIR / "db.sqlite3"
+
+
+class PermissionServiceSettings(BaseModel):
+    url: AnyHttpUrl = "http://localhost:8000/permissions/check/"
 
 
 class CorsSettings(BaseModel):
@@ -36,6 +40,7 @@ class Settings(BaseSettings):
     reload: bool = True
     cors: CorsSettings = CorsSettings()
     db: DbSettings = DbSettings()
+    permission: PermissionServiceSettings = PermissionServiceSettings()
 
 
 settings = Settings()

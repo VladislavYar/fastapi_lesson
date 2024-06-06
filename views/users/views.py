@@ -1,10 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.models import db_helper
-from views.users.schemas import UserSchema, UserSchemaIn
+from views.users.schemas import UserSchema, UserCreateSchema, UserUpdateSchema
 from views.users import crud
 from core.models import User
+from utils.email_sender import send_email
+from views.users.dependencies import get_user_by_id_or_raise
+from common.dependencies import PermissionRequired
 
 
 router = APIRouter(tags=["Users"])
@@ -13,9 +18,14 @@ router = APIRouter(tags=["Users"])
 @router.get(
         "/",
         response_model=list[UserSchema],
+        dependencies=[
+            Depends(PermissionRequired("USERS_GET")),
+        ]
         )
 async def get_users_list(
-        session: AsyncSession = Depends(db_helper.get_session_dependency),
+        session: Annotated[
+            AsyncSession, Depends(db_helper.get_session_dependency)
+            ],
         ) -> list[User]:
     return await crud.get_users(session)
 
@@ -23,12 +33,20 @@ async def get_users_list(
 @router.post(
         "/",
         response_model=UserSchema,
+        dependencies=[
+            Depends(PermissionRequired("USERS_CREATE")),
+        ]
         )
 async def create_user(
-        data_create: UserSchemaIn,
-        session: AsyncSession = Depends(db_helper.get_session_dependency),
+        background_tasks: BackgroundTasks,
+        data_create: UserCreateSchema,
+        session: Annotated[
+            AsyncSession, Depends(db_helper.get_session_dependency)
+            ],
         ) -> User:
-    return await crud.create_user(session, data_create)
+    user = await crud.create_user(session, data_create)
+    background_tasks.add_task(send_email, user.email, "Test", "Test text")
+    return user
 
 
 @router.get(
@@ -36,13 +54,23 @@ async def create_user(
         response_model=UserSchema,
         )
 async def get_user(
-    user_id: int,
-        session: AsyncSession = Depends(db_helper.get_session_dependency),
+        session: Annotated[
+            AsyncSession, Depends(db_helper.get_session_dependency)
+            ],
+        user: User = Depends(get_user_by_id_or_raise),
      ) -> User:
-    user: User | None = await crud.get_user_by_id(session, user_id)
-    if user:
-        return user
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=f"User id{user} not found.",
-    )
+    return user
+
+
+@router.patch(
+        "/{user_id}",
+        response_model=UserSchema,
+        )
+async def update_user(
+        session: Annotated[
+            AsyncSession, Depends(db_helper.get_session_dependency)
+            ],
+        data_update: UserUpdateSchema,
+        user: User = Depends(get_user_by_id_or_raise),
+     ) -> User:
+    return await crud.update_user(session, user, data_update)

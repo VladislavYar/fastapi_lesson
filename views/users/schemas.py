@@ -7,8 +7,14 @@ class UserBaseSchema(BaseModel):
     motto: str | None = None
 
 
-class UserSchemaIn(UserBaseSchema):
+class UserCreateSchema(UserBaseSchema):
     pass
+
+
+class UserUpdateSchema(BaseModel):
+    username: str | None = None
+    email: EmailStr | None = None
+    motto: str | None = None
 
 
 class UserSchema(UserBaseSchema):

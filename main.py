@@ -2,13 +2,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from views import calc_router, users_router
+from views import calc_router, users_router, permissions_router
 from config import settings
 
 
 app = FastAPI()
 app.include_router(calc_router, prefix="/calc")
 app.include_router(users_router, prefix="/users")
+app.include_router(permissions_router, prefix="/permissions")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors.allow_origins,
