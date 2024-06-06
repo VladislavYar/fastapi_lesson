@@ -1,6 +1,13 @@
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from pathlib import Path
+
+
+BASE_DIR = Path(__file__).parent
+
+SQLITE_DB_PATH = BASE_DIR / "db.sqlite3"
+
 
 class CorsSettings(BaseModel):
     allow_origins: list[str] = [
@@ -14,6 +21,11 @@ class CorsSettings(BaseModel):
     allow_headers: list[str] = ["*"]
 
 
+class DbSettings(BaseModel):
+    url: str = f"sqlite+aiosqlite:///{SQLITE_DB_PATH}"
+    echo: bool = True
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="APP_",
@@ -23,6 +35,7 @@ class Settings(BaseSettings):
     port: int = 8000
     reload: bool = True
     cors: CorsSettings = CorsSettings()
+    db: DbSettings = DbSettings()
 
 
 settings = Settings()

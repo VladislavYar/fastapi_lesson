@@ -2,12 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from views.calc import router
+from views import calc_router, users_router
 from config import settings
 
 
 app = FastAPI()
-app.include_router(router, prefix="/calc")
+app.include_router(calc_router, prefix="/calc")
+app.include_router(users_router, prefix="/users")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors.allow_origins,
@@ -34,7 +35,6 @@ def hi_by_path(name: str = "World!") -> dict[str, str]:
 
 
 if __name__ == '__main__':
-    print(settings.model_dump())
     uvicorn.run(
         "main:app",
         host=settings.host,
